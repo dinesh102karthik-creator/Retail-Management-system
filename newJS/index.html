@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetailFlow — Retail Inventory Management System</title>
+  <meta name="description" content="Full-stack retail inventory system with stock in/out engine, audit trail history, suppliers directory, and dark mode.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">📦</div>
+        <div>
+          <div class="brand-title">RetailFlow</div>
+          <div class="brand-subtitle">Inventory OS</div>
+        </div>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item active" data-view="dashboard">
+          <button type="button" id="nav-dashboard">
+            <span class="icon">📊</span>
+            <span>Dashboard</span>
+          </button>
+        </li>
+        <li class="nav-item" data-view="products">
+          <button type="button" id="nav-products">
+            <span class="icon">🏷️</span>
+            <span>Products Catalog</span>
+          </button>
+        </li>
+        <li class="nav-item" data-view="stock-movement">
+          <button type="button" id="nav-stock-movement">
+            <span class="icon">🔄</span>
+            <span>Stock In / Out</span>
+          </button>
+        </li>
+        <li class="nav-item" data-view="history">
+          <button type="button" id="nav-history">
+            <span class="icon">📜</span>
+            <span>Audit Trail / History</span>
+          </button>
+        </li>
+        <li class="nav-item" data-view="suppliers">
+          <button type="button" id="nav-suppliers">
+            <span class="icon">🏢</span>
+            <span>Suppliers</span>
+          </button>
+        </li>
+        <li class="nav-item" data-view="reports">
+          <button type="button" id="nav-reports">
+            <span class="icon">📑</span>
+            <span>Reports & Export</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="system-status">
+          <div class="status-indicator" id="api-status-dot"></div>
+          <span id="api-status-text">System Active</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted);">
+          RetailFlow Platform
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Application Wrapper -->
+    <div class="main-wrapper">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="page-heading">
+          <h1 id="page-title">Dashboard Overview</h1>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="btn btn-outline" id="btn-quick-stock" type="button">
+            <span>⚡</span>
+            <span>Quick Movement</span>
+          </button>
+
+          <button class="btn btn-primary" id="btn-new-product" type="button">
+            <span>➕</span>
+            <span>Add Product</span>
+          </button>
+
+          <!-- Dark / Light Mode Toggle -->
+          <button class="theme-toggle-btn" id="theme-toggle" title="Toggle Dark/Light Mode" type="button">
+            <span id="theme-icon">🌙</span>
+          </button>
+
+          <button class="btn btn-outline" id="btn-logout" type="button" hidden>Sign out</button>
+
+          <!-- User Profile Indicator -->
+          <div class="user-profile-badge">
+            <div class="avatar">AD</div>
+            <div class="user-meta">
+              <span class="user-name">Admin</span>
+              <span class="user-role">Warehouse 01</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- View Bodies -->
+      <main class="content-body">
+
+        <!-- 1. DASHBOARD VIEW -->
+        <section id="view-dashboard" class="view-section active">
+          <!-- KPI Stats Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Total Products</span>
+                <div class="stat-icon">📦</div>
+              </div>
+              <div class="stat-value" id="kpi-total-products">0</div>
+              <div class="stat-subtext">Active items in catalog</div>
+            </div>
+
+            <div class="stat-card success-stock">
+              <div class="stat-header">
+                <span class="stat-title">Total Stock Units</span>
+                <div class="stat-icon">📈</div>
+              </div>
+              <div class="stat-value" id="kpi-total-stock">0</div>
+              <div class="stat-subtext" id="kpi-in-stock-subtext">0 items fully stocked</div>
+            </div>
+
+            <div class="stat-card alert-low">
+              <div class="stat-header">
+                <span class="stat-title">Low Stock Alert</span>
+                <div class="stat-icon">⚠️</div>
+              </div>
+              <div class="stat-value" id="kpi-low-stock" style="color: var(--low-stock-color);">0</div>
+              <div class="stat-subtext">Requires immediate replenishment</div>
+            </div>
+
+            <div class="stat-card alert-out">
+              <div class="stat-header">
+                <span class="stat-title">Out of Stock</span>
+                <div class="stat-icon">🚫</div>
+              </div>
+              <div class="stat-value" id="kpi-out-stock" style="color: var(--out-stock-color);">0</div>
+              <div class="stat-subtext">Critical stock-out warning</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Inventory Valuation</span>
+                <div class="stat-icon">💰</div>
+              </div>
+              <div class="stat-value" id="kpi-total-value">$0.00</div>
+              <div class="stat-subtext" id="kpi-margin-subtext">Est. Profit Margin: 0%</div>
+            </div>
+          </div>
+
+          <!-- Split Dashboard Detail -->
+          <div class="dashboard-grid-split">
+            <!-- Left: Low Stock Attention List -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">🚨 Low & Out of Stock Alerts</h3>
+                <button class="btn btn-outline btn-sm" id="btn-view-all-alerts">View Products</button>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <div class="table-responsive" style="border: none;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Product / SKU</th>
+                        <th>Category</th>
+                        <th>Current Qty</th>
+                        <th>Min Threshold</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="low-stock-tbody">
+                      <tr><td colspan="6" style="text-align:center; padding: 24px;">Loading alerts...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Category Distribution -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">📊 Category Stock Distribution</h3>
+              </div>
+              <div class="card-body" id="category-progress-list">
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Calculating category distribution...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Audit History Widget -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">🕒 Recent Stock Transactions & History</h3>
+              <button class="btn btn-outline btn-sm" id="btn-view-full-history">Full Audit Trail</button>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive" style="border: none;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>User</th>
+                      <th>Action</th>
+                      <th>Product</th>
+                      <th>Change</th>
+                      <th>New Balance</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-history-tbody">
+                    <tr><td colspan="7" style="text-align:center; padding: 24px;">Loading recent history...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. PRODUCTS CATALOG VIEW -->
+        <section id="view-products" class="view-section">
+          <div class="toolbar">
+            <div class="toolbar-group">
+              <div class="search-input-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="product-search" placeholder="Search by name, SKU, supplier...">
+              </div>
+
+              <select class="select-filter" id="product-filter-category">
+                <option value="All">All Categories</option>
+                <option value="Grocery">Grocery</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Snacks">Snacks</option>
+                <option value="Personal Care">Personal Care</option>
+                <option value="Household">Household</option>
+                <option value="Stationery">Stationery</option>
+                <option value="Dairy">Dairy</option>
+                <option value="Bakery">Bakery</option>
+              </select>
+
+              <select class="select-filter" id="product-filter-status">
+                <option value="All">All Statuses</option>
+                <option value="In Stock">In Stock</option>
+                <option value="Low Stock">Low Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+            </div>
+
+            <div class="toolbar-group">
+              <button class="btn btn-outline" id="btn-export-products-csv">📥 Export CSV</button>
+              <button class="btn btn-primary" id="btn-add-product-catalog">➕ Add Product</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="data-table" id="products-table">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Retail Price</th>
+                    <th>Cost</th>
+                    <th>Quantity</th>
+                    <th>Min Alert</th>
+                    <th>Supplier</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="products-tbody">
+                  <tr><td colspan="10" style="text-align:center; padding: 30px;">Loading product catalog...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. STOCK IN / OUT VIEW -->
+        <section id="view-stock-movement" class="view-section">
+          <div class="dashboard-grid-split">
+            <!-- Left: Fast Movement Form -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">⚡ Fast Stock In / Stock Out Action</h3>
+              </div>
+              <div class="card-body">
+                <form id="form-stock-adjustment">
+                  <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="adj-product-select">Select Product *</label>
+                    <select id="adj-product-select" class="form-control" required>
+                      <option value="">-- Choose Product --</option>
+                    </select>
+                  </div>
+
+                  <div class="form-grid" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                      <label>Action Type *</label>
+                      <select id="adj-action-select" class="form-control" required>
+                        <option value="STOCK_IN">📥 Stock In (Receive Goods)</option>
+                        <option value="STOCK_OUT">📤 Stock Out (Dispatch / Sale)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="adj-quantity">Quantity *</label>
+                      <input type="number" id="adj-quantity" class="form-control" min="1" placeholder="e.g. 15" required>
+                    </div>
+                  </div>
+
+                  <div class="form-grid" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                      <label for="adj-user">Initiated By (User)</label>
+                      <input type="text" id="adj-user" class="form-control" value="Admin">
+                    </div>
+
+                    <div class="form-group">
+                      <label for="adj-source">Reason / Ref Category</label>
+                      <select id="adj-reason-preset" class="form-control">
+                        <option value="Supplier Delivery PO">Supplier Delivery PO</option>
+                        <option value="Retail Customer Purchase">Retail Customer Purchase</option>
+                        <option value="Inventory Reconciliation Audit">Inventory Reconciliation Audit</option>
+                        <option value="Damaged or Expired Write-off">Damaged or Expired Write-off</option>
+                        <option value="Warehouse Transfer">Warehouse Transfer</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="adj-notes">Operational Notes *</label>
+                    <textarea id="adj-notes" class="form-control" rows="3" placeholder="Provide notes or invoice/manifest numbers..." required></textarea>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+                    Record Stock Movement & Save Audit Entry
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Right: Stock Movement Guidelines -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">ℹ️ Movement & Audit Rules</h3>
+              </div>
+              <div class="card-body">
+                <div style="font-size: 13.5px; line-height: 1.7; color: var(--text-secondary);">
+                  <p><strong>Stock In:</strong></p>
+                  <ul style="margin-left: 20px; margin-bottom: 14px;">
+                    <li>Adds units to available inventory immediately.</li>
+                    <li>Updates status from 'Out of Stock' or 'Low Stock' to 'In Stock' dynamically.</li>
+                    <li>Generates an immutable entry in the audit trail.</li>
+                  </ul>
+                  <p><strong>Stock Out:</strong></p>
+                  <ul style="margin-left: 20px; margin-bottom: 14px;">
+                    <li>Validates that requested dispatch quantity does not exceed current on-hand stock.</li>
+                    <li>If stock falls at or below minimum threshold, triggers low stock warning.</li>
+                    <li>Records user identity, IP address, and signed negative delta.</li>
+                  </ul>
+                  <div style="padding: 12px; background: var(--surface-alt); border-radius: var(--radius-md); border-left: 4px solid var(--primary);">
+                    <small>All movements are permanently recorded with full audit trail compliance.</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. AUDIT TRAIL / HISTORY VIEW -->
+        <section id="view-history" class="view-section">
+          <div class="toolbar">
+            <div class="toolbar-group">
+              <div class="search-input-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="history-search" placeholder="Search by product, user, SKU, notes...">
+              </div>
+
+              <select class="select-filter" id="history-filter-action">
+                <option value="All">All Actions</option>
+                <option value="STOCK_IN">STOCK_IN</option>
+                <option value="STOCK_OUT">STOCK_OUT</option>
+                <option value="PRODUCT_CREATED">PRODUCT_CREATED</option>
+                <option value="PRODUCT_UPDATED">PRODUCT_UPDATED</option>
+                <option value="PRODUCT_DELETED">PRODUCT_DELETED</option>
+                <option value="AUDIT_ADJUSTMENT">AUDIT_ADJUSTMENT</option>
+              </select>
+            </div>
+
+            <div class="toolbar-group">
+              <button class="btn btn-outline" id="btn-export-history-csv">📥 Export Audit Log (CSV)</button>
+              <button class="btn btn-outline" id="btn-refresh-history">🔄 Refresh</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Prev Qty</th>
+                    <th>Delta</th>
+                    <th>New Qty</th>
+                    <th>IP / Source</th>
+                    <th>Operational Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="full-history-tbody">
+                  <tr><td colspan="10" style="text-align:center; padding: 30px;">Loading audit trail...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. SUPPLIERS DIRECTORY VIEW -->
+        <section id="view-suppliers" class="view-section">
+          <div class="toolbar">
+            <div class="toolbar-group">
+              <h2 style="font-size: 16px; font-weight: 600;">Authorized Vendors & Distributors</h2>
+            </div>
+            <div class="toolbar-group">
+              <button class="btn btn-primary" id="btn-add-supplier">➕ Add Supplier</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Vendor Name</th>
+                    <th>Contact Person</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Categories Supplied</th>
+                    <th>Status</th>
+                    <th>Address</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="suppliers-tbody">
+                  <tr><td colspan="8" style="text-align:center; padding: 30px;">Loading suppliers...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. REPORTS & EXPORT VIEW -->
+        <section id="view-reports" class="view-section">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Catalog Export</span>
+                <div class="stat-icon">📄</div>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                Download complete inventory catalog as a CSV spreadsheet for accounting and procurement.
+              </p>
+              <button class="btn btn-primary" id="btn-report-export-products" style="width: 100%;">
+                📥 Download Products CSV
+              </button>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Audit Log Export</span>
+                <div class="stat-icon">🛡️</div>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                Export complete historical ledger of all stock transactions and inventory modifications.
+              </p>
+              <button class="btn btn-primary" id="btn-report-export-history" style="width: 100%;">
+                📥 Download Audit Trail CSV
+              </button>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Catalog Reset</span>
+                <div class="stat-icon">🔄</div>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                Restore all catalog items and stock levels back to standard default inventory.
+              </p>
+              <button class="btn btn-outline" id="btn-reseed-db" style="width: 100%;">
+                🔁 Reset Standard Inventory
+              </button>
+            </div>
+          </div>
+
+          <!-- Valuation Breakdown Table -->
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">📈 Category Valuation & Profit Margins</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Product Count</th>
+                    <th>Total Units in Stock</th>
+                    <th>Total Retail Value ($)</th>
+                    <th>Inventory Status</th>
+                  </tr>
+                </thead>
+                <tbody id="valuation-tbody">
+                  <tr><td colspan="5" style="text-align: center; padding: 24px;">Calculating category valuations...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT PRODUCT -->
+  <div class="modal-overlay" id="modal-product">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="modal-product-title">Add New Product</h3>
+        <button class="close-btn" data-close-modal="modal-product">&times;</button>
+      </div>
+      <form id="form-product">
+        <input type="hidden" id="prod-id">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="prod-sku">SKU Code *</label>
+              <input type="text" id="prod-sku" class="form-control" placeholder="e.g. GRO-105" required>
+            </div>
+            <div class="form-group">
+              <label for="prod-category">Category *</label>
+              <select id="prod-category" class="form-control" required>
+                <option value="Grocery">Grocery</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Snacks">Snacks</option>
+                <option value="Personal Care">Personal Care</option>
+                <option value="Household">Household</option>
+                <option value="Stationery">Stationery</option>
+                <option value="Dairy">Dairy</option>
+                <option value="Bakery">Bakery</option>
+              </select>
+            </div>
+            <div class="form-group col-span-2">
+              <label for="prod-name">Product Name *</label>
+              <input type="text" id="prod-name" class="form-control" placeholder="Full descriptive commercial name" required>
+            </div>
+            <div class="form-group">
+              <label for="prod-price">Retail Price ($) *</label>
+              <input type="number" id="prod-price" step="0.01" min="0" class="form-control" placeholder="19.99" required>
+            </div>
+            <div class="form-group">
+              <label for="prod-cost">Cost Price ($)</label>
+              <input type="number" id="prod-cost" step="0.01" min="0" class="form-control" placeholder="12.50">
+            </div>
+            <div class="form-group">
+              <label for="prod-quantity">Quantity On Hand *</label>
+              <input type="number" id="prod-quantity" min="0" class="form-control" placeholder="50" required>
+            </div>
+            <div class="form-group">
+              <label for="prod-min-alert">Min Stock Alert *</label>
+              <input type="number" id="prod-min-alert" min="1" class="form-control" value="10" required>
+            </div>
+            <div class="form-group">
+              <label for="prod-supplier">Supplier</label>
+              <input type="text" id="prod-supplier" class="form-control" placeholder="e.g. Global Grain Co">
+            </div>
+            <div class="form-group">
+              <label for="prod-location">Store Shelf / Location</label>
+              <input type="text" id="prod-location" class="form-control" placeholder="e.g. Aisle 3-B">
+            </div>
+            <div class="form-group col-span-2">
+              <label for="prod-barcode">Barcode (EAN-12 / UPC)</label>
+              <input type="text" id="prod-barcode" class="form-control" placeholder="890123456799">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="modal-product">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-product">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: QUICK STOCK IN/OUT -->
+  <div class="modal-overlay" id="modal-quick-stock">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="modal-quick-title">Quick Stock Adjustment</h3>
+        <button class="close-btn" data-close-modal="modal-quick-stock">&times;</button>
+      </div>
+      <form id="form-modal-quick-adj">
+        <input type="hidden" id="quick-prod-id">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label>Selected Product</label>
+            <div id="quick-product-summary" style="padding: 10px; background: var(--surface-alt); border-radius: var(--radius-md); font-weight: 600;">
+              Select a product
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom: 14px;">
+            <div class="form-group">
+              <label>Movement Type</label>
+              <select id="quick-action" class="form-control">
+                <option value="STOCK_IN">📥 Stock In (+)</option>
+                <option value="STOCK_OUT">📤 Stock Out (-)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quantity Change</label>
+              <input type="number" id="quick-qty" min="1" class="form-control" placeholder="10" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes / Reason *</label>
+            <input type="text" id="quick-notes" class="form-control" placeholder="Delivery PO / Sale / Adjustment reason" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="modal-quick-stock">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm Movement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD SUPPLIER -->
+  <div class="modal-overlay" id="modal-supplier">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Add Supplier</h3>
+        <button class="close-btn" data-close-modal="modal-supplier">&times;</button>
+      </div>
+      <form id="form-supplier">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group col-span-2">
+              <label for="supp-name">Supplier / Company Name *</label>
+              <input type="text" id="supp-name" class="form-control" placeholder="e.g. Alpine Dairy Corp" required>
+            </div>
+            <div class="form-group">
+              <label for="supp-contact">Contact Person</label>
+              <input type="text" id="supp-contact" class="form-control" placeholder="Full Name">
+            </div>
+            <div class="form-group">
+              <label for="supp-email">Email Address</label>
+              <input type="email" id="supp-email" class="form-control" placeholder="orders@supplier.com">
+            </div>
+            <div class="form-group">
+              <label for="supp-phone">Phone Number</label>
+              <input type="tel" id="supp-phone" class="form-control" placeholder="+1-555-0199">
+            </div>
+            <div class="form-group">
+              <label for="supp-category">Primary Category</label>
+              <select id="supp-category" class="form-control">
+                <option value="Grocery">Grocery</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Snacks">Snacks</option>
+                <option value="Personal Care">Personal Care</option>
+                <option value="Household">Household</option>
+                <option value="Stationery">Stationery</option>
+                <option value="Dairy">Dairy</option>
+                <option value="Bakery">Bakery</option>
+              </select>
+            </div>
+            <div class="form-group col-span-2">
+              <label for="supp-address">Address</label>
+              <input type="text" id="supp-address" class="form-control" placeholder="City, State / Logistics Hub">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="modal-supplier">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Supplier</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
